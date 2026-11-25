@@ -1,0 +1,6 @@
+Host vantage
+    HostName 192.168.10.24
+    Port 2222
+    User verasonics
+    IdentityFile ~/.ssh/vantage_ed25519
+    IdentitiesOnly yes

@@ -1,0 +1,14 @@
+# Verasonics tomography from the laptop
+
+1. On Verasonics, leave Windows signed in and unlocked as `verasonics`, with one signed-in MATLAB R2022a window at the Command Window. Stop any existing VSX acquisition with its stop controls before starting another.
+2. From this folder in laptop PowerShell run `./Test-Vantage.ps1`. Expect the remote identity, the desktop session, a MATLAB process in that session, and the AutoHotkey task. The test is read-only.
+3. Start the laptop receiver before acquisition. From `C:\Users\natef\Documents\Codex\2026-11-05\i-x20\outputs\udp_rf`, run `python receiver.py --bind 192.168.1.216 --port 5005 --out captures`. If the Windows Store alias fails, use the full interpreter path (the installed Codex runtime was found at `C:\Users\natef\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`). Confirm the sender points to the laptop's current reachable IP. Ctrl+C saves the trailing capture.
+4. Run `./Start-Vantage.ps1`. It queues Vantage activation, the tomography setup script, and VSX with the generated MAT file in the existing signed-in MATLAB desktop. The printed server log path is unique to the launch. Read it over SSH with PowerShell's `Get-Content -Tail 20`. Confirm repeated acquisition messages there and nonzero throughput in the receiver. Use VSX's stop controls to end acquisition.
+
+## Setup and troubleshooting
+
+Keep the two scripts, the SSH config, and the pinned host-key file together. The existing private key stays at `~/.ssh/vantage_ed25519`. OpenSSH on the server listens at `192.168.10.24:2222`. If it times out, check `Get-Service sshd`, the 2222 listener, and the `Vantage-OpenSSH-2222` firewall address filter. Use the client IP the server actually sees. Port 22 uses a separate password-based service.
+
+The server already has the interactive task `Vantage-MATLAB-Submit`. It runs AutoHotkey v2 under `verasonics` and uses `C:\Users\Administrator\Documents\Vantage-Matlab-Helper\submit.ahk`. The helper selects a unique MATLAB R2022a window, focuses the Command Window with Ctrl+0 and enters `command.txt`. Its exit code confirms keystroke submission only. MATLAB previously wrote a version marker proving the helper reached the existing session. If the helper is missing, restore it and the on-demand interactive task from the server backup. A new MATLAB process may ask for MathWorks sign-in again.
+
+The setup script generates `MatFiles\UTA64_LEMO_RealTime_Abdomen_Tomography.mat` under the Vantage root. VSX uses the MATLAB workspace variable `filename` to load that setup and runs the acquisition loop. The existing VSX log showed repeated acquisition updates. The laptop previously saw zero UDP packets, including a test datagram. Check inter-subnet routing and the laptop's inbound UDP 5005 firewall rule if throughput stays at zero.
